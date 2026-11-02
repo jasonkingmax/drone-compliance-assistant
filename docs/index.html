@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人机合规助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .status.compliant {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .status.non-compliant {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .section li {
+            padding: 10px;
+            background: #f8f9fa;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section li.violation {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .section li.warning {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        
+        .section li.requirement {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        
+        .legal-ref {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚁 无人机合规助手</h1>
+            <p>查询飞行合规性，避免违规飞行</p>
+        </div>
+        
+        <div class="card">
+            <form id="complianceForm">
+                <div class="form-group">
+                    <label for="address">📍 飞行地点（地址）</label>
+                    <input type="text" id="address" placeholder="例如：上海市外滩" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="droneType">🛸 无人机类型</label>
+                    <select id="droneType" required>
+                        <option value="">请选择</option>
+                        <option value="微型">微型（<250g）</option>
+                        <option value="轻型">轻型（250g-4kg）</option>
+                        <option value="小型">小型（4kg-15kg）</option>
+                        <option value="中型">中型（15kg-150kg）</option>
+                        <option value="大型">大型（≥150kg）</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="altitude">📏 飞行高度（米）</label>
+                    <input type="number" id="altitude" placeholder="例如：100" min="0" max="1000" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="purpose">🎯 飞行目的</label>
+                    <select id="purpose" required>
+                        <option value="">请选择</option>
+                        <option value="娱乐">娱乐飞行</option>
+                        <option value="商业">商业飞行</option>
+                        <option value="测绘">测绘作业</option>
+                        <option value="农业">农业植保</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn">检查合规性</button>
+            </form>
+            
+            <div id="loading" class="loading" style="display:none;">
+                <div class="spinner"></div>
+                <div>正在检查飞行合规性...</div>
+            </div>
+            
+            <div id="result" class="result">
+                <!-- 结果将在这里显示 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        
+        // 地理编码：地址转坐标
+        async function geocode(address) {
+            const response = await fetch(`${API_BASE}/geocode?address=${encodeURIComponent(address)}`);
+            const data = await response.json();
+            
+            if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
+                const location = data.geocodes[0].location.split(',');
+                return {
+                    longitude: parseFloat(location[0]),
+                    latitude: parseFloat(location[1])
+                };
+            }
+            throw new Error('无法解析地址，请尝试更详细的地址');
+        }
+        
+        // 检查合规性
+        async function checkCompliance(latitude, longitude, droneType, altitude, purpose) {
+            const response = await fetch(`${API_BASE}/compliance/check`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    latitude,
+                    longitude,
+                    drone_type: droneType,
+                    altitude: parseFloat(altitude),
+                    purpose
+                })
+            });
+            return await response.json();
+        }
+        
+        // 显示结果
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            
+            let html = '';
+            
+            // 状态
+            const statusClass = result.is_compliant ? 'compliant' : 'non-compliant';
+            const statusText = result.is_compliant ? '✅ 可以飞行' : '❌ 禁止飞行';
+            html += `<div class="status ${statusClass}">${statusText}</div>`;
+            
+            // 空域信息
+            html += `<div class="section">
+                <h3>📍 空域信息</h3>
+                <ul>
+                    <li><strong>空域类型：</strong>${result.airspace_info.airspace_type}</li>
+                    <li><strong>高度限制：</strong>${result.airspace_info.altitude_limit}米</li>
+                </ul>
+            </div>`;
+            
+            // 违规项
+            if (result.violations && result.violations.length > 0) {
+                html += `<div class="section">
+                    <h3>⚠️ 违规项</h3>
+                    <ul>`;
+                result.violations.forEach(v => {
+                    html += `<li class="violation">
+                        <strong>${v.item}</strong><br>
+                        ${v.description}
+                        ${v.zones ? `<br><small>涉及区域：${v.zones.map(z => z.name).join('、')}</small>` : ''}
+                    </li>`;
+                });
+                html += `</ul></div>`;
+            }
+            
+            // 警告项
+            if (result.warnings && result.warnings.length > 0) {
+                html += `<div class="section">
+                    <h3>⚡ 注意事项</h3>
+                    <ul>`;
+                result.warnings.forEach(w => {
+                    html += `<li class="warning"><strong>${w.item}</strong><br>${w.description}</li>`;
+                });
+                html += `</ul></div>`;
+            }
+            
+            // 合规要求
+            if (result.requirements && result.requirements.length > 0) {
+                html += `<div class="section">
+                    <h3>✅ 合规要求</h3>
+                    <ul>`;
+                result.requirements.forEach(r => {
+                    html += `<li class="requirement">
+                        <strong>${r.item}</strong><br>
+                        ${r.description}
+                        ${r.platform ? `<br><small>平台：${r.platform}</small>` : ''}
+                    </li>`;
+                });
+                html += `</ul></div>`;
+            }
+            
+            // 法律依据
+            if (result.legal_references && result.legal_references.length > 0) {
+                html += `<div class="section">
+                    <h3>📚 法律依据</h3>
+                    <ul>`;
+                result.legal_references.forEach(l => {
+                    html += `<li>
+                        <strong>${l.law}</strong> ${l.article}<br>
+                        ${l.description}
+                        ${l.penalty ? `<br><small>罚则：${l.penalty}</small>` : ''}
+                    </li>`;
+                });
+                html += `</ul></div>`;
+            }
+            
+            // 总结
+            html += `<div class="section">
+                <h3>📋 检查总结</h3>
+                <p>${result.summary}</p>
+            </div>`;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.classList.add('show');
+        }
+        
+        // 表单提交
+        document.getElementById('complianceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const address = document.getElementById('address').value;
+            const droneType = document.getElementById('droneType').value;
+            const altitude = document.getElementById('altitude').value;
+            const purpose = document.getElementById('purpose').value;
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            result.classList.remove('show');
+            
+            try {
+                // 1. 地理编码
+                const coords = await geocode(address);
+                
+                // 2. 检查合规性
+                const complianceResult = await checkCompliance(
+                    coords.latitude,
+                    coords.longitude,
+                    droneType,
+                    altitude,
+                    purpose
+                );
+                
+                // 3. 显示结果
+                displayResult(complianceResult);
+                
+            } catch (error) {
+                alert('检查失败：' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
