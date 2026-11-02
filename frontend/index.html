@@ -249,7 +249,9 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000/api/v1';
+        // API配置 - 可通过URL参数 ?api=xxx 覆盖
+        const urlParams = new URLSearchParams(window.location.search);
+        const API_BASE = urlParams.get('api') || 'http://localhost:8000/api/v1';
         
         // 地理编码：地址转坐标
         async function geocode(address) {
